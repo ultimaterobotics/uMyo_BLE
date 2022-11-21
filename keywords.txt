@@ -1,0 +1,28 @@
+#######################################
+# Syntax Coloring Map For Keyboard
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+uMyo		KEYWORD2
+begin		KEYWORD2
+stop		KEYWORD2
+getDeviceCount	KEYWORD2
+getBattery	KEYWORD2
+getID		KEYWORD2
+getDataID	KEYWORD2
+getMuscleLevel	KEYWORD2
+getSpectrum	KEYWORD2
+getRoll		KEYWORD2
+getPitch	KEYWORD2
+getYaw		KEYWORD2
+
+#######################################
+# Constants (LITERAL1)
+#######################################
