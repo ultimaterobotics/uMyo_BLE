@@ -43,7 +43,8 @@ class UMyoAdvertisedDeviceCallbacks : public BLEAdvertisedDeviceCallbacks
 
 			int adc_id = pack[pp++];
 			int batt_level = pack[pp++];
-			int16_t sp0 = (pack[pp]<<8) | pack[pp+1]; pp += 2;
+			int16_t sp0 = pack[pp++]<<8; //component 0 is sent at reduced precision
+			int muscle_avg = pack[pp++];
 			int16_t sp1 = (pack[pp]<<8) | pack[pp+1]; pp += 2;
 			int16_t sp2 = (pack[pp]<<8) | pack[pp+1]; pp += 2;
 			int16_t sp3 = (pack[pp]<<8) | pack[pp+1]; pp += 2;
@@ -63,6 +64,7 @@ class UMyoAdvertisedDeviceCallbacks : public BLEAdvertisedDeviceCallbacks
 			uMyo_data *device = uMyo.getDeviceByID(unit_id);
 			device->last_data_id = adc_id;
 			device->batt_mv = 2000 + batt_level*10;
+			device->device_avg_muscle_level = (muscle_avg*muscle_avg)>>3;
 			device->cur_spectrum[0] = sp0;
 			device->cur_spectrum[1] = sp1;
 			device->cur_spectrum[2] = sp2;
@@ -74,8 +76,69 @@ class UMyoAdvertisedDeviceCallbacks : public BLEAdvertisedDeviceCallbacks
 	}
 };
 
+//'void (* (*)(esp_gap_ble_cb_event_t, esp_ble_gap_cb_param_t*))(esp_gap_ble_cb_event_t, esp_ble_gap_cb_param_t*)' to 'esp_gap_ble_cb_t' {aka 'void (*)(esp_gap_ble_cb_event_t, esp_ble_gap_cb_param_t*)'} [-fpermissive]
+
+void scan_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param)
+{
+	Serial.println("evt");
+	if(event == ESP_GAP_BLE_SCAN_RESULT_EVT)
+	{
+		Serial.println("scan res");
+		esp_ble_gap_cb_param_t::ble_scan_result_evt_param *par = (esp_ble_gap_cb_param_t::ble_scan_result_evt_param *)param;
+		uint8_t *pack = par->ble_adv;
+		int len = par->adv_data_len;
+		int pp = 0;
+		while(pp < len-5)
+		{
+			pp++;
+			if(pack[pp] != 8) continue;
+			if(pack[pp+1] != 'u') continue;
+			if(pack[pp+2] != 'M') continue;
+			if(pack[pp+3] != 'y') continue;
+			if(pack[pp+4] != 'o') continue;
+			while(pack[pp] != 255 && pp < len) pp++;
+			if(pp >= len) return;
+			pp++;
+
+			int adc_id = pack[pp++];
+			int batt_level = pack[pp++];
+			int16_t sp0 = pack[pp++]<<8; //component 0 is sent at reduced precision
+			int muscle_avg = pack[pp++];
+			int16_t sp1 = (pack[pp]<<8) | pack[pp+1]; pp += 2;
+			int16_t sp2 = (pack[pp]<<8) | pack[pp+1]; pp += 2;
+			int16_t sp3 = (pack[pp]<<8) | pack[pp+1]; pp += 2;
+			int16_t qw = (pack[pp]<<8) | pack[pp+1]; pp += 2;
+			int16_t qx = (pack[pp++]<<8);
+			int16_t qy = (pack[pp++]<<8);
+			int16_t qz = (pack[pp++]<<8);
+			sQ Qsg;
+			Qsg.w = qw;
+			Qsg.x = qx;
+			Qsg.y = qy;
+			Qsg.z = qz;
+			q_renorm(&Qsg);
+
+			uint8_t *mac = par->bda;
+			uint32_t unit_id = (mac[1]<<24) | (mac[2]<<16) | (mac[3]<<8) | mac[4];
+			uMyo_data *device = uMyo.getDeviceByID(unit_id);
+			device->last_data_id = adc_id;
+			device->batt_mv = 2000 + batt_level*10;
+			device->device_avg_muscle_level = (muscle_avg*muscle_avg)>>3;
+			device->cur_spectrum[0] = sp0;
+			device->cur_spectrum[1] = sp1;
+			device->cur_spectrum[2] = sp2;
+			device->cur_spectrum[3] = sp3;
+			device->Qsg = Qsg;
+
+		}
+		return;
+
+	}
+}
+
 void uMyo_BLE_::rescan(BLEScanResults res)
 {
+	pBLEScan->clearResults();
 	if(scanTime > 0) pBLEScan->start(scanTime, uMyo_BLE_::rescan, true);
 }
 
@@ -88,13 +151,27 @@ uMyo_BLE_::uMyo_BLE_()
 }
 void uMyo_BLE_::begin()
 {
-	scanTime = 5; //seconds
+/*	scanTime = 85; //seconds
+	memset(&m_scan_params, 0, sizeof(m_scan_params)); // Initialize all params
+	m_scan_params.scan_type          = BLE_SCAN_TYPE_ACTIVE; // Default is a passive scan.
+	m_scan_params.own_addr_type      = BLE_ADDR_TYPE_PUBLIC;
+	m_scan_params.scan_filter_policy = BLE_SCAN_FILTER_ALLOW_ALL;
+	m_scan_params.scan_duplicate     = BLE_SCAN_DUPLICATE_DISABLE;
+	m_scan_params.scan_interval = 16; //10 ms
+	m_scan_params.scan_window = 16;
+	esp_ble_gap_set_scan_params(&m_scan_params);
+	esp_ble_gap_register_callback(&scan_cb);
+	esp_ble_gap_start_scanning(scanTime);
+	return;*/
+
+	scanTime = 1; //seconds
 	BLEDevice::init("");
 	pBLEScan = BLEDevice::getScan(); //create new scan
 	pBLEScan->setAdvertisedDeviceCallbacks(new UMyoAdvertisedDeviceCallbacks());
 	pBLEScan->setActiveScan(true); //active scan uses more power, but get results faster
-	pBLEScan->setInterval(100);
-	pBLEScan->setWindow(99); // less or equal setInterval value
+	pBLEScan->setInterval(32);
+	pBLEScan->setWindow(31); // less or equal setInterval value
+
 	pBLEScan->start(scanTime, this->rescan, false);
 }
 void uMyo_BLE_::pause()
@@ -162,6 +239,11 @@ float uMyo_BLE_::getMuscleLevel(uint8_t devidx)
 	if(devidx >= device_count) return 0;
 	float lvl = devices[devidx].cur_spectrum[2] + 2*devices[devidx].cur_spectrum[3];
 	return lvl;
+}
+float uMyo_BLE_::getAverageMuscleLevel(uint8_t devidx)
+{
+	if(devidx >= device_count) return 0;
+	return devices[devidx].device_avg_muscle_level;
 }
 void uMyo_BLE_::getSpectrum(uint8_t devidx, float *spectrum)
 {

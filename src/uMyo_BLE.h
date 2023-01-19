@@ -22,6 +22,11 @@
 #define UMYO_BLE_h
 
 #include <Arduino.h>
+
+#include <BLEAdvertisedDevice.h>
+#include <BLEClient.h>
+#include <esp_gap_ble_api.h>
+
 #include <BLEDevice.h>
 #include "quat_math.h"
 #define MAX_UMYO_DEVICES 12
@@ -32,6 +37,7 @@ typedef struct uMyo_data
 	int batt_mv;
 	uint8_t last_data_id;
 	int16_t cur_spectrum[4];
+	uint16_t device_avg_muscle_level;
 	uint32_t last_data_time;
 	sQ Qsg;
 	int operator=(uMyo_data d2)
@@ -40,6 +46,7 @@ typedef struct uMyo_data
 		batt_mv = d2.batt_mv;
 		last_data_id = d2.last_data_id;
 		last_data_time = d2.last_data_time;
+		device_avg_muscle_level = d2.device_avg_muscle_level;
 		for(int x = 0; x < 4; x++) cur_spectrum[x] = d2.cur_spectrum[x];
 		Qsg = d2.Qsg;
 		return 1;
@@ -56,6 +63,8 @@ private:
 	static int scanTime;
 	static BLEScan *pBLEScan;
 	static void rescan(BLEScanResults res);
+
+	esp_ble_scan_params_t m_scan_params;
 public:
 	uMyo_BLE_(void);
 	void begin();
@@ -66,6 +75,7 @@ public:
 	uint32_t getID(uint8_t devidx);
 	uint8_t getDataID(uint8_t devidx);
 	float getMuscleLevel(uint8_t devidx);
+	float getAverageMuscleLevel(uint8_t devidx);
 	void getSpectrum(uint8_t devidx, float *spectrum);
 	void getRawData(uint8_t devidx, int16_t *data);
 	float getPitch(uint8_t devidx);

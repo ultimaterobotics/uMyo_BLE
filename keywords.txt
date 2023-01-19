@@ -18,6 +18,7 @@ getBattery	KEYWORD2
 getID		KEYWORD2
 getDataID	KEYWORD2
 getMuscleLevel	KEYWORD2
+getAverageMuscleLevel	KEYWORD2
 getSpectrum	KEYWORD2
 getRoll		KEYWORD2
 getPitch	KEYWORD2
