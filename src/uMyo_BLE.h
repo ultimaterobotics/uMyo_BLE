@@ -23,11 +23,8 @@
 
 #include <Arduino.h>
 
-#include <BLEAdvertisedDevice.h>
-#include <BLEClient.h>
-#include <esp_gap_ble_api.h>
+#include <ArduinoBLE.h>
 
-#include <BLEDevice.h>
 #include "quat_math.h"
 #define MAX_UMYO_DEVICES 12
 
@@ -60,16 +57,10 @@ private:
 	sV nx, ny, nz;
 	int device_count;
 	uint8_t idToIdx(uint32_t id);
-	static int scanTime;
-	static BLEScan *pBLEScan;
-	static void rescan(BLEScanResults res);
-
-	esp_ble_scan_params_t m_scan_params;
 public:
 	uMyo_BLE_(void);
 	void begin();
-	void pause();
-	void resume();
+	void run();
 	uint8_t getDeviceCount();
 	int getBattery(uint8_t devidx);
 	uint32_t getID(uint8_t devidx);

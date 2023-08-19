@@ -1,7 +1,7 @@
-= uMyo_BLE Library for ESP32 =
+= uMyo_BLE Library for nRF52x and ESP32 based Arduinos =
 
-This library allows to receive data from uMyo devices using BLE mode of ESP32 radio,
-providing muscle activity readings, roll, pitch, yaw angles and 4-bins spectrum
+This library allows to receive data from uMyo devices using BLE This library allows to receive data from uMyo devices using BLE enabled Arduinos (both nRF52x and ESP32 based), providing muscle activity readings, roll, pitch, yaw angles and 4-bins spectrum
+
 
 == License ==
 

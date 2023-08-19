@@ -1,6 +1,6 @@
 /*
-Obtaining muscle data from uMyo via BLE on ESP32 and showing 
-activity level on a connected WS2812 LED strip
+Obtaining muscle data from uMyo via BLE on various Arduino boards
+and showing activity level on a connected WS2812 LED strip
 */
 
 #include <uMyo_BLE.h>
@@ -22,6 +22,7 @@ void setup() {
 
 void loop() 
 {
+  uMyo.run();
   int dev_count = uMyo.getDeviceCount(); //if more than one device is present, show all of them
   float muscle_level = 0;
   if(dev_count > 0) muscle_level = uMyo.getMuscleLevel(0); //take data from the 1st connected device if more than 1 is connected
