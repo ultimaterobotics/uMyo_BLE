@@ -102,10 +102,6 @@ void uMyo_BLE_::begin()
 void uMyo_BLE_::run()
 {
 	BLE.poll();
-}
-uint8_t uMyo_BLE_::idToIdx(uint32_t id)
-{
-	uint32_t ms = millis();
 	for(uint8_t u = 0; u < device_count; u++)
 	{
 		if(ms - devices[u].last_data_time > 5000)
@@ -115,6 +111,10 @@ uint8_t uMyo_BLE_::idToIdx(uint32_t id)
 			device_count--;
 		}
 	}
+}
+uint8_t uMyo_BLE_::idToIdx(uint32_t id)
+{
+	uint32_t ms = millis();
 	for(uint8_t u = 0; u < device_count; u++)
 		if(id == devices[u].id)
 		{
